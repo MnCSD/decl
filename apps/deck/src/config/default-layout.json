@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "profiles": [
+    {
+      "id": "game",
+      "name": "Game",
+      "icon": "gamepad",
+      "pages": [
+        {
+          "id": "main",
+          "name": "Main",
+          "keys": [
+            { "id": "mic", "type": "button", "category": "stream", "label": "Mic live", "onLabel": "Muted", "icon": "mic", "onIcon": "micOff", "actionId": "discord.toggleMute", "lit": { "source": "voice.micMuted" } },
+            { "id": "deafen", "type": "button", "category": "comms", "label": "Deafen", "onLabel": "Deafened", "icon": "headphones", "actionId": "discord.toggleDeafen", "lit": { "source": "voice.deafened" } },
+            { "id": "squad", "type": "squad", "category": "comms", "label": "Squad · 4", "lit": "always" },
+            { "id": "discord", "type": "app", "category": "comms", "label": "Discord", "app": "discord" },
+            { "id": "nowPlaying", "type": "nowPlaying", "category": "media", "label": "Now playing", "actionId": "media.playPause" },
+            { "id": "next", "type": "button", "category": "media", "label": "Next", "icon": "next", "actionId": "media.next" },
+            { "id": "volume", "type": "value", "category": "media", "label": "Volume", "source": "volume.level", "adjustId": "volume.level", "actionId": "volume.toggleMute" },
+            { "id": "dnd", "type": "button", "category": "modes", "label": "DND", "onLabel": "DND on", "icon": "moon", "actionId": "dnd.toggle", "lit": { "source": "modes.dnd" } },
+
+            { "id": "sceneGame", "type": "button", "category": "stream", "label": "Game", "icon": "scene", "actionId": "obs.setScene", "params": { "scene": "Game" }, "lit": { "source": "obs.scene", "equals": "Game" } },
+            { "id": "sceneChat", "type": "button", "category": "stream", "label": "Chat", "icon": "scene", "actionId": "obs.setScene", "params": { "scene": "Chat" }, "lit": { "source": "obs.scene", "equals": "Chat" } },
+            { "id": "sceneBrb", "type": "button", "category": "stream", "label": "BRB", "icon": "scene", "actionId": "obs.setScene", "params": { "scene": "BRB" }, "lit": { "source": "obs.scene", "equals": "BRB" } },
+            { "id": "record", "type": "recording", "category": "stream", "label": "Record", "onLabel": "Recording", "actionId": "obs.toggleRecord" },
+            { "id": "clip", "type": "button", "category": "stream", "label": "Clip 30s", "icon": "clip", "actionId": "obs.saveReplay" },
+            { "id": "marker", "type": "button", "category": "stream", "label": "Marker", "icon": "flag", "actionId": "obs.addMarker" },
+            { "id": "goLive", "type": "button", "category": "stream", "label": "Go live", "onLabel": "Live", "icon": "broadcast", "actionId": "obs.toggleStream", "lit": { "source": "obs.streaming" } },
+            { "id": "screenshot", "type": "button", "category": "system", "label": "Screenshot", "icon": "camera", "actionId": "system.screenshot" },
+
+            { "id": "cpu", "type": "ring", "category": "system", "label": "CPU", "source": "system.cpuTempC" },
+            { "id": "gpu", "type": "ring", "category": "system", "label": "GPU", "source": "system.gpuTempC" },
+            { "id": "layout", "type": "button", "category": "system", "label": "Layout", "icon": "monitor" },
+            { "id": "screensOff", "type": "button", "category": "system", "label": "Screens off", "icon": "eyeOff", "actionId": "system.screensOff" },
+            { "id": "lock", "type": "button", "category": "system", "label": "Lock", "icon": "lock", "actionId": "system.lock" },
+            { "id": "sleep", "type": "button", "category": "system", "label": "Sleep", "icon": "power", "actionId": "system.sleep" },
+            { "id": "focus", "type": "ring", "category": "home", "label": "Focus", "source": "focus", "needsPc": false },
+            { "id": "streamFolder", "type": "folder", "category": "system", "label": "Stream", "icon": "folder", "folder": "stream" },
+
+            { "id": "modeGaming", "type": "button", "category": "modes", "label": "Gaming", "icon": "gamepad", "actionId": "mode.run", "params": { "mode": "gaming" }, "lit": { "source": "modes.active", "equals": "gaming" } },
+            { "id": "modeStudy", "type": "button", "category": "modes", "label": "Study", "icon": "book", "actionId": "mode.run", "params": { "mode": "study" }, "lit": { "source": "modes.active", "equals": "study" } },
+            { "id": "modeMovie", "type": "button", "category": "modes", "label": "Movie", "icon": "film", "actionId": "mode.run", "params": { "mode": "movie" }, "lit": { "source": "modes.active", "equals": "movie" } },
+            { "id": "modeGoodnight", "type": "button", "category": "modes", "label": "Goodnight", "icon": "moon", "actionId": "mode.run", "params": { "mode": "goodnight" }, "lit": { "source": "modes.active", "equals": "goodnight" } },
+            { "id": "roomLight", "type": "value", "category": "home", "label": "Room light", "source": "light.brightness", "adjustId": "light.brightness", "actionId": "light.toggle", "needsPc": false },
+            { "id": "ledStrip", "type": "swatches", "category": "home", "label": "LED strip", "colors": ["#A78BFA", "#FF5466", "#4CC3FF"], "lit": "always" },
+            { "id": "lightsOff", "type": "button", "category": "home", "label": "Lights off", "icon": "bulb", "actionId": "light.off", "needsPc": false },
+            { "id": "toPhone", "type": "button", "category": "system", "label": "To phone", "icon": "send" }
+          ]
+        },
+        {
+          "id": "voice",
+          "name": "Voice",
+          "keys": [
+            { "id": "v-mic", "type": "button", "category": "stream", "label": "Mic live", "onLabel": "Muted", "icon": "mic", "onIcon": "micOff", "actionId": "discord.toggleMute", "lit": { "source": "voice.micMuted" } },
+            { "id": "v-deafen", "type": "button", "category": "comms", "label": "Deafen", "onLabel": "Deafened", "icon": "headphones", "actionId": "discord.toggleDeafen", "lit": { "source": "voice.deafened" } },
+            { "id": "v-squad", "type": "squad", "category": "comms", "label": "Squad · 4", "lit": "always" },
+            { "id": "v-discord", "type": "app", "category": "comms", "label": "Discord", "app": "discord" },
+            null, null, null,
+            { "id": "v-dnd", "type": "button", "category": "modes", "label": "DND", "onLabel": "DND on", "icon": "moon", "actionId": "dnd.toggle", "lit": { "source": "modes.dnd" } },
+            { "id": "v-prev", "type": "button", "category": "media", "label": "Previous", "icon": "previous", "actionId": "media.previous" },
+            { "id": "v-now", "type": "nowPlaying", "category": "media", "label": "Now playing", "actionId": "media.playPause" },
+            { "id": "v-next", "type": "button", "category": "media", "label": "Next", "icon": "next", "actionId": "media.next" },
+            { "id": "v-volume", "type": "value", "category": "media", "label": "Volume", "source": "volume.level", "adjustId": "volume.level", "actionId": "volume.toggleMute" }
+          ]
+        },
+        {
+          "id": "apps",
+          "name": "Apps",
+          "keys": [
+            { "id": "a-explorer", "type": "app", "category": "system", "label": "Explorer", "app": "explorer" },
+            { "id": "a-discord", "type": "app", "category": "comms", "label": "Discord", "app": "discord" },
+            { "id": "a-spotify", "type": "app", "category": "media", "label": "Spotify", "app": "spotify" },
+            { "id": "a-obs", "type": "app", "category": "stream", "label": "OBS", "app": "obs" },
+            { "id": "a-league", "type": "app", "category": "modes", "label": "League", "app": "league" },
+            { "id": "a-steam", "type": "app", "category": "modes", "label": "Steam", "app": "steam" },
+            { "id": "a-chrome", "type": "app", "category": "system", "label": "Chrome", "app": "chrome" },
+            { "id": "a-vscode", "type": "app", "category": "system", "label": "VS Code", "app": "vscode" }
+          ]
+        },
+        {
+          "id": "lights",
+          "name": "Lights",
+          "keys": [
+            { "id": "l-room", "type": "value", "category": "home", "label": "Room light", "source": "light.brightness", "adjustId": "light.brightness", "actionId": "light.toggle", "needsPc": false },
+            { "id": "l-off", "type": "button", "category": "home", "label": "Lights off", "icon": "bulb", "actionId": "light.off", "needsPc": false },
+            { "id": "l-purple", "type": "swatches", "category": "home", "label": "Purple", "colors": ["#A78BFA"], "actionId": "light.setColor", "params": { "rgb": "#A78BFA" }, "needsPc": false },
+            { "id": "l-warm", "type": "swatches", "category": "home", "label": "Warm white", "colors": ["#FFD9A0"], "actionId": "light.setColor", "params": { "rgb": "#FFD9A0" }, "needsPc": false },
+            { "id": "l-blue", "type": "swatches", "category": "home", "label": "Ice blue", "colors": ["#4CC3FF"], "actionId": "light.setColor", "params": { "rgb": "#4CC3FF" }, "needsPc": false },
+            { "id": "l-red", "type": "swatches", "category": "home", "label": "Red", "colors": ["#FF5466"], "actionId": "light.setColor", "params": { "rgb": "#FF5466" }, "needsPc": false },
+            null, null,
+            { "id": "l-gaming", "type": "button", "category": "modes", "label": "Gaming", "icon": "gamepad", "actionId": "mode.run", "params": { "mode": "gaming" }, "lit": { "source": "modes.active", "equals": "gaming" } },
+            { "id": "l-study", "type": "button", "category": "modes", "label": "Study", "icon": "book", "actionId": "mode.run", "params": { "mode": "study" }, "lit": { "source": "modes.active", "equals": "study" } },
+            { "id": "l-movie", "type": "button", "category": "modes", "label": "Movie", "icon": "film", "actionId": "mode.run", "params": { "mode": "movie" }, "lit": { "source": "modes.active", "equals": "movie" } },
+            { "id": "l-goodnight", "type": "button", "category": "modes", "label": "Goodnight", "icon": "moon", "actionId": "mode.run", "params": { "mode": "goodnight" }, "lit": { "source": "modes.active", "equals": "goodnight" } }
+          ]
+        }
+      ],
+      "folders": [
+        {
+          "id": "stream",
+          "name": "Stream",
+          "keys": []
+        }
+      ]
+    }
+  ]
+}

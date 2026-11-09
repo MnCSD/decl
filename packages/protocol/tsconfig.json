@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Shared with the React Native app, so no Node-only types here.
+    "types": []
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+.env
+.DS_Store
+
+# Expo / Android (M2+)
+.expo/
+apps/deck/android/
+apps/deck/ios/
