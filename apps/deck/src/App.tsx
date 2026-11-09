@@ -4,7 +4,7 @@ import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
 import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
 import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono/400Regular';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono/500Medium';
-import { parseLayout } from '@deck/protocol';
+import { parseLayout, type DeckLayout } from '@deck/protocol';
 import { useFonts } from 'expo-font';
 import { useKeepAwake } from 'expo-keep-awake';
 import { NavigationBar } from 'expo-navigation-bar';
@@ -13,7 +13,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import layoutJson from './config/default-layout.json';
+import { useDeck } from './connection/useDeck';
 import { DeckScreen } from './screens/DeckScreen';
+import { PairScreen } from './screens/PairScreen';
 import { CANVAS, colors, fonts } from './theme';
 
 // Validate the layout JSON once at startup; a mistake shows an error screen instead of crashing.
@@ -42,12 +44,30 @@ export default function App() {
       <NavigationBar hidden />
       {!fontsLoaded ? null : layoutResult.ok ? (
         <ScaleToFit>
-          <DeckScreen layout={layoutResult.layout} />
+          <Main layout={layoutResult.layout} />
         </ScaleToFit>
       ) : (
         <LayoutError message={layoutResult.error} />
       )}
     </View>
+  );
+}
+
+/** Pairing screen until we have a PC, then the live deck. */
+function Main({ layout }: { layout: DeckLayout }) {
+  const deck = useDeck();
+  if (deck.phase === 'loading') return null; // reading saved pairing; takes a few ms
+  if (deck.phase === 'unpaired') return <PairScreen onPair={deck.pair} notice={deck.unpairedReason} />;
+  return (
+    <DeckScreen
+      layout={layout}
+      state={deck.state}
+      status={deck.status}
+      appIcons={deck.icons}
+      onKeyPress={(key) => void deck.pressKey(key)}
+      onAdjust={deck.adjust}
+      onForgetPc={() => void deck.forget()}
+    />
   );
 }
 

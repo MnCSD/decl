@@ -1,6 +1,8 @@
 import type { DeckPage, DeckProfile, DeckState } from '@deck/protocol';
 import * as Haptics from 'expo-haptics';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { ConnectionStatus } from '../connection/deck-client';
 import { useClock } from '../hooks/useClock';
 import { ROOM_PURPLE, categoryColors, colors, fonts, shadows } from '../theme';
 import { Icon } from './Icon';
@@ -11,14 +13,15 @@ interface TopBarProps {
   pageIndex: number;
   onSelectPage: (index: number) => void;
   state: DeckState;
-  pcOnline: boolean;
+  status: ConnectionStatus;
+  onForgetPc: () => void;
 }
 
-export function TopBar({ profile, pages, pageIndex, onSelectPage, state, pcOnline }: TopBarProps) {
+export function TopBar({ profile, pages, pageIndex, onSelectPage, state, status, onForgetPc }: TopBarProps) {
   return (
     <View style={styles.bar}>
       <ProfileButton profile={profile} state={state} />
-      <StatusArea state={state} pcOnline={pcOnline} />
+      <StatusArea state={state} status={status} onForgetPc={onForgetPc} />
       {/* Absolutely centered, so it doesn't shift when the chips change width. */}
       <View style={styles.trackCenter} pointerEvents="box-none">
         <PageTrack pages={pages} pageIndex={pageIndex} onSelect={onSelectPage} />
@@ -87,20 +90,65 @@ function PageTrack({
   );
 }
 
+const FORGET_CONFIRM_MS = 4000;
+
 /** Right: mic chip, PC chip, clock, edit button. */
-function StatusArea({ state, pcOnline }: { state: DeckState; pcOnline: boolean }) {
+function StatusArea({
+  state,
+  status,
+  onForgetPc,
+}: {
+  state: DeckState;
+  status: ConnectionStatus;
+  onForgetPc: () => void;
+}) {
   const { time, date } = useClock();
   const muted = state.voice.micMuted;
   const temp = state.system.cpuTempC ?? state.system.gpuTempC;
 
+  // Long-press the PC chip -> it turns into a "Forget PC?" button for a few seconds.
+  // (An inline confirm instead of a dialog: dialogs don't work in the browser preview.)
+  const [confirmForget, setConfirmForget] = useState(false);
+  useEffect(() => {
+    if (!confirmForget) return;
+    const timer = setTimeout(() => setConfirmForget(false), FORGET_CONFIRM_MS);
+    return () => clearTimeout(timer);
+  }, [confirmForget]);
+
+  const pcChip =
+    status === 'online' ? (
+      <Chip dot={colors.live} text={temp === null ? 'PC' : `PC · ${Math.round(temp)}°`} />
+    ) : status === 'connecting' ? (
+      <Chip dot={categoryColors.home} text="CONNECTING…" glow={false} />
+    ) : (
+      <Chip dot={colors.textFaint} text="PC OFFLINE" glow={false} />
+    );
+
   return (
     <View style={styles.status}>
       <Chip dot={muted ? categoryColors.stream : colors.live} text={muted ? 'MIC MUTED' : 'MIC LIVE'} />
-      {pcOnline ? (
-        <Chip dot={colors.live} text={temp === null ? 'PC' : `PC · ${Math.round(temp)}°`} />
-      ) : (
-        <Chip dot={colors.textFaint} text="PC ASLEEP" glow={false} />
-      )}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={confirmForget ? 'Forget this PC' : `PC status: ${status}. Long-press to forget this PC`}
+        delayLongPress={600}
+        onLongPress={() => {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setConfirmForget(true);
+        }}
+        onPress={() => {
+          if (!confirmForget) return;
+          setConfirmForget(false);
+          onForgetPc();
+        }}
+      >
+        {confirmForget ? (
+          <View style={[styles.chip, styles.forgetChip]}>
+            <Text style={[styles.chipText, styles.forgetText]}>FORGET PC?</Text>
+          </View>
+        ) : (
+          pcChip
+        )}
+      </Pressable>
       <View style={styles.clock}>
         <Text style={styles.time}>{time}</Text>
         <Text style={styles.meta}>{date}</Text>
@@ -215,6 +263,8 @@ const styles = StyleSheet.create({
   },
   dot: { width: 8, height: 8, borderRadius: 4 },
   chipText: { fontFamily: fonts.mono400, fontSize: 11, color: colors.chipText },
+  forgetChip: { backgroundColor: categoryColors.stream, borderColor: categoryColors.stream },
+  forgetText: { fontFamily: fonts.mono500, color: colors.ink },
   clock: { alignItems: 'flex-end', gap: 1, paddingLeft: 8, paddingRight: 6 },
   time: {
     fontFamily: fonts.ui700,

@@ -1,9 +1,10 @@
-import { KEYS_PER_PAGE, type DeckKey, type DeckPage, type DeckState } from '@deck/protocol';
+import { KEYS_PER_PAGE, type AdjustId, type DeckKey, type DeckPage, type DeckState } from '@deck/protocol';
 import { useEffect, useMemo, useRef } from 'react';
 import { Animated, PanResponder, StyleSheet } from 'react-native';
-import type { LocalState } from '../state/sample-state';
+import type { LocalState } from '../state/local-state';
 import { KEY } from '../theme';
 import { EmptyKey } from './Keycap';
+import { blockPresses } from './press-guard';
 import { KeyView } from './KeyView';
 
 const SWIPE_START = 24; // px of horizontal movement before we treat it as a swipe
@@ -17,11 +18,12 @@ interface KeyGridProps {
   local: LocalState;
   appIcons: Record<string, string>;
   onKeyPress: (key: DeckKey) => void;
+  onAdjust: (adjustId: AdjustId, value: number) => void;
   onSwipe: (delta: 1 | -1) => void;
 }
 
 /** 8×4 grid of keys. Horizontal swipes anywhere on it change page. */
-export function KeyGrid({ page, direction, state, local, appIcons, onKeyPress, onSwipe }: KeyGridProps) {
+export function KeyGrid({ page, direction, state, local, appIcons, onKeyPress, onAdjust, onSwipe }: KeyGridProps) {
   const enter = useRef(new Animated.Value(1)).current;
 
   // Short slide + fade whenever the page changes.
@@ -40,7 +42,10 @@ export function KeyGrid({ page, direction, state, local, appIcons, onKeyPress, o
       PanResponder.create({
         onMoveShouldSetPanResponderCapture: (_, g) =>
           Math.abs(g.dx) > SWIPE_START && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+        onPanResponderGrant: () => blockPresses(),
+        onPanResponderMove: () => blockPresses(),
         onPanResponderRelease: (_, g) => {
+          blockPresses();
           if (g.dx <= -SWIPE_COMMIT) onSwipeRef.current(1);
           else if (g.dx >= SWIPE_COMMIT) onSwipeRef.current(-1);
         },
@@ -64,7 +69,7 @@ export function KeyGrid({ page, direction, state, local, appIcons, onKeyPress, o
     >
       {slots.map((key, i) =>
         key ? (
-          <KeyView key={key.id} keyDef={key} state={state} local={local} appIcons={appIcons} onPress={onKeyPress} />
+          <KeyView key={key.id} keyDef={key} state={state} local={local} appIcons={appIcons} onPress={onKeyPress} onAdjust={onAdjust} />
         ) : (
           <EmptyKey key={`empty-${i}`} />
         ),

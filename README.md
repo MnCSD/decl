@@ -8,7 +8,7 @@ and controls a Windows PC (system, media, volume, apps, later Discord, OBS, Yeel
 
 ## Status
 
-M1 ✅ agent + protocol · M2 ✅ tablet UI (+ real app icons) · **M3 next:** tablet ↔ agent connection and real System/Media/Volume actions.
+M1 ✅ agent + protocol · M2 ✅ tablet UI (+ real app icons) · **M3 🔍 ready for your check:** pairing, live connection, System/Media/Volume actions · M4 next: Wake-on-LAN + asleep state.
 
 ## Project layout
 
@@ -56,7 +56,13 @@ npm run deck -- --web        # browser preview (no haptics/fullscreen); best at 
 
 Key layout: `apps/deck/src/config/default-layout.json` (profiles → pages → up to 32 keys).
 It's validated when the app starts and by `npm test`.
-Until M3 the app shows sample data; taps only change that preview locally.
+**First run:** the app shows a pairing screen. Enter the PC's address (printed by the agent as `ws://<address>:4343`;
+only the address part, e.g. `192.168.2.8`) and the 6-digit code from the agent window.
+The app remembers the PC and reconnects by itself. To pair with another PC: **long-press the PC chip** in the
+top bar, then tap **FORGET PC?**.
+
+In the browser preview the address `localhost` works when the agent runs on the same computer.
+Careful: with the real agent (`npm run agent`), keys do real things (Lock, Sleep, Screens off…).
 
 ## Checks
 

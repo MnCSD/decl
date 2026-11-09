@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useRef, type ReactNode } from 'react';
 import { Animated, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { KEY, colors, shadows } from '../theme';
+import { pressesBlocked } from './press-guard';
 
 interface KeycapProps {
   /** Lit = face filled with `color`, glow around the cap. */
@@ -57,7 +58,9 @@ export function Keycap({
         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }}
       onPressOut={() => animateTo(0)}
-      onPress={onPress}
+      onPress={() => {
+        if (!pressesBlocked()) onPress?.(); // the touch was a swipe, not a tap
+      }}
       style={style}
     >
       <Animated.View

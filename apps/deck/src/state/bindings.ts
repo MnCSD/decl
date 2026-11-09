@@ -1,5 +1,5 @@
 import type { DeckKey, DeckState, Lit, LitSource } from '@deck/protocol';
-import type { LocalState } from './sample-state';
+import type { LocalState } from './local-state';
 
 /**
  * Turns layout bindings ("lit when voice.micMuted") into values from the state.
