@@ -1,5 +1,4 @@
 import type { DeckKey, DeckState } from '@deck/protocol';
-import type { ReactNode } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { formatTimer, isLit, readRing, readValue } from '../state/bindings';
 import type { LocalState } from '../state/sample-state';
@@ -17,14 +16,26 @@ interface KeyViewProps {
   onPress: (key: DeckKey) => void;
 }
 
-/** Renders one key from the layout JSON, picking the look from its `type`. */
+/** Size of the main artwork on a key face (the face itself is ~124 px). */
+const ART = 64;
+
+/** Short captions drawn inside rings, so CPU and GPU can be told apart without labels. */
+const RING_CAPTIONS: Record<string, string> = { 'system.cpuTempC': 'CPU', 'system.gpuTempC': 'GPU' };
+/** Small icon above the number on value keys. */
+const VALUE_ICONS: Record<string, string> = { 'volume.level': 'volume', 'light.brightness': 'bulb' };
+
+/**
+ * Renders one key from the layout JSON, picking the look from its `type`.
+ * Keys are artwork only (no text labels), like LCD keys; the label is still
+ * used for accessibility.
+ */
 export function KeyView({ keyDef: k, state, local, appIcons, onPress }: KeyViewProps) {
   const color = categoryColors[k.category];
   const press = () => onPress(k);
 
   switch (k.type) {
     case 'app': {
-      // Real, full-color app icon on the dark face; the cap glows while the app runs.
+      // Real app icon, big, on a tile in the app's brand color; the cap glows while the app runs.
       const running = state.apps.find((a) => a.id === k.app)?.running ?? false;
       const icon = appIcons[k.app];
       return (
@@ -32,32 +43,26 @@ export function KeyView({ keyDef: k, state, local, appIcons, onPress }: KeyViewP
           lit={false}
           glow={running}
           color={color}
+          faceColor={k.color ?? color}
           accessibilityLabel={`${k.label}${running ? ', running' : ''}`}
           onPress={press}
         >
-          {running ? <View style={[styles.runningDot, { backgroundColor: color, boxShadow: `0 0 6px ${color}` }]} /> : null}
-          <IconSlot>
-            {icon ? (
-              <Image source={{ uri: icon }} style={styles.appIcon} />
-            ) : (
-              // Not in apps.json on the PC, or no icon yet.
-              <Icon name="help" color={color} />
-            )}
-          </IconSlot>
-          <Label text={k.label} lit={false} />
+          {icon ? (
+            <Image source={{ uri: icon }} style={styles.appIcon} />
+          ) : (
+            // Not in apps.json on the PC, or no icon yet.
+            <Icon name="help" size={ART} color="rgba(255,255,255,0.85)" />
+          )}
+          {running ? <View style={styles.runningDot} /> : null}
         </Keycap>
       );
     }
 
     case 'button': {
       const lit = isLit(k.lit, state);
-      const label = lit && k.onLabel ? k.onLabel : k.label;
       return (
-        <Keycap lit={lit} color={color} accessibilityLabel={label} onPress={press}>
-          <IconSlot>
-            <Icon name={lit && k.onIcon ? k.onIcon : k.icon} color={lit ? colors.ink : color} />
-          </IconSlot>
-          <Label text={label} lit={lit} />
+        <Keycap lit={lit} color={color} accessibilityLabel={lit && k.onLabel ? k.onLabel : k.label} onPress={press}>
+          <Icon name={lit && k.onIcon ? k.onIcon : k.icon} size={ART} strokeWidth={1.8} color={lit ? colors.ink : color} />
         </Keycap>
       );
     }
@@ -78,18 +83,14 @@ export function KeyView({ keyDef: k, state, local, appIcons, onPress }: KeyViewP
               <View
                 style={[
                   styles.fill,
-                  { height: `${fill}%`, backgroundColor: withAlpha(color, 0.28), borderTopColor: color },
+                  { height: `${fill}%`, backgroundColor: withAlpha(color, 0.32), borderTopColor: color },
                 ]}
               />
             ) : null
           }
         >
-          <IconSlot>
-            <Text style={[styles.bigNumber, { color: on ? colors.text : colors.textFaint }]}>
-              {data ? data.value : '–'}
-            </Text>
-          </IconSlot>
-          <Label text={on || !data ? k.label : `${k.label} · off`} lit={false} />
+          <Icon name={VALUE_ICONS[k.source] ?? 'help'} size={22} strokeWidth={2.2} color={on ? color : colors.textFaint} />
+          <Text style={[styles.bigNumber, { color: on ? colors.text : colors.textFaint }]}>{data ? data.value : '–'}</Text>
         </Keycap>
       );
     }
@@ -98,17 +99,16 @@ export function KeyView({ keyDef: k, state, local, appIcons, onPress }: KeyViewP
       const data = readRing(k.source, state, local);
       return (
         <Keycap lit color={color} accessibilityLabel={`${k.label} ${data?.text ?? 'unavailable'}`} onPress={press}>
-          <IconSlot>
-            <Ring
-              progress={data?.progress ?? 0}
-              text={data?.text ?? '–'}
-              color={colors.ink}
-              trackColor={withAlpha(colors.ink, 0.18)}
-              textColor={colors.ink}
-              fontSize={k.source === 'focus' ? 12 : 13}
-            />
-          </IconSlot>
-          <Label text={k.label} lit />
+          <Ring
+            size={88}
+            progress={data?.progress ?? 0}
+            text={data?.text ?? '–'}
+            caption={RING_CAPTIONS[k.source]}
+            color={colors.ink}
+            trackColor={withAlpha(colors.ink, 0.18)}
+            textColor={colors.ink}
+            fontSize={k.source === 'focus' ? 18 : 20}
+          />
         </Keycap>
       );
     }
@@ -118,10 +118,7 @@ export function KeyView({ keyDef: k, state, local, appIcons, onPress }: KeyViewP
       if (!media) {
         return (
           <Keycap lit={false} color={color} accessibilityLabel="Nothing playing" onPress={press}>
-            <IconSlot>
-              <Icon name="play" color={color} />
-            </IconSlot>
-            <Label text="Nothing playing" lit={false} />
+            <Icon name="play" size={ART} color={color} />
           </Keycap>
         );
       }
@@ -133,12 +130,9 @@ export function KeyView({ keyDef: k, state, local, appIcons, onPress }: KeyViewP
           onPress={press}
           background={<AlbumArt uri={media.artUrl} />}
         >
-          <IconSlot>
-            <View style={styles.playButton}>
-              <Icon name={media.playing ? 'pause' : 'play'} size={20} strokeWidth={2.6} color={colors.ink} />
-            </View>
-          </IconSlot>
-          <Label text={media.title} lit={false} />
+          <View style={styles.playButton}>
+            <Icon name={media.playing ? 'pause' : 'play'} size={26} strokeWidth={2.6} color={colors.ink} />
+          </View>
         </Keycap>
       );
     }
@@ -152,17 +146,14 @@ export function KeyView({ keyDef: k, state, local, appIcons, onPress }: KeyViewP
           accessibilityLabel={lit ? `Recording ${formatTimer(state.obs.recordingSec)}, tap to stop` : k.label}
           onPress={press}
         >
-          <IconSlot>
-            {lit ? (
-              <View style={styles.timerRow}>
-                <View style={styles.recDot} />
-                <Text style={[styles.timer, { color: colors.ink }]}>{formatTimer(state.obs.recordingSec)}</Text>
-              </View>
-            ) : (
-              <Icon name="record" color={color} />
-            )}
-          </IconSlot>
-          <Label text={lit ? (k.onLabel ?? 'Recording') : k.label} lit={lit} />
+          {lit ? (
+            <View style={styles.timerRow}>
+              <View style={styles.recDot} />
+              <Text style={[styles.timer, { color: colors.ink }]}>{formatTimer(state.obs.recordingSec)}</Text>
+            </View>
+          ) : (
+            <Icon name="record" size={ART} color={color} />
+          )}
         </Keycap>
       );
     }
@@ -170,10 +161,7 @@ export function KeyView({ keyDef: k, state, local, appIcons, onPress }: KeyViewP
     case 'folder':
       return (
         <Keycap lit color={color} accessibilityLabel={`${k.label} folder`} onPress={press}>
-          <IconSlot>
-            <Icon name={k.icon} color={colors.ink} />
-          </IconSlot>
-          <Label text={`${k.label} ›`} lit />
+          <Icon name={k.icon} size={ART} strokeWidth={1.8} color={colors.ink} />
         </Keycap>
       );
 
@@ -181,45 +169,42 @@ export function KeyView({ keyDef: k, state, local, appIcons, onPress }: KeyViewP
       const lit = isLit(k.lit, state);
       return (
         <Keycap lit={lit} color={color} accessibilityLabel={k.label} onPress={press}>
-          <IconSlot>
-            <View style={styles.avatars}>
-              {AVATAR_COLORS.map((c, i) => (
-                <View
-                  key={c}
-                  style={[
-                    styles.avatar,
-                    { backgroundColor: c, marginLeft: i === 0 ? 0 : -10 },
-                    i === 0 && { boxShadow: `0 0 0 2px ${color}` },
-                  ]}
-                />
-              ))}
-            </View>
-          </IconSlot>
-          <Label text={k.label} lit={lit} />
+          <View style={styles.avatars}>
+            {AVATAR_COLORS.map((c, i) => (
+              <View
+                key={c}
+                style={[
+                  styles.avatar,
+                  { backgroundColor: c, marginLeft: i === 0 ? 0 : -14 },
+                  i === 0 && { boxShadow: `0 0 0 2px ${color}` },
+                ]}
+              />
+            ))}
+          </View>
         </Keycap>
       );
     }
 
     case 'swatches': {
       const lit = isLit(k.lit, state);
-      const single = k.colors.length === 1;
+      // A single color fills the whole face; several colors show as a row of dots.
+      if (k.colors.length === 1) {
+        return <Keycap lit={false} color={color} faceColor={k.colors[0]} accessibilityLabel={k.label} onPress={press} />;
+      }
       return (
         <Keycap lit={lit} color={color} accessibilityLabel={k.label} onPress={press}>
-          <IconSlot>
-            <View style={styles.swatches}>
-              {k.colors.map((c, i) => (
-                <View
-                  key={`${c}-${i}`}
-                  style={[
-                    single ? styles.swatchBig : styles.swatch,
-                    { backgroundColor: c },
-                    i === 0 && { boxShadow: `0 0 0 2px ${colors.face}, 0 0 0 4px #FFFFFF` },
-                  ]}
-                />
-              ))}
-            </View>
-          </IconSlot>
-          <Label text={k.label} lit={lit} />
+          <View style={styles.swatches}>
+            {k.colors.map((c, i) => (
+              <View
+                key={`${c}-${i}`}
+                style={[
+                  styles.swatch,
+                  { backgroundColor: c },
+                  i === 0 && { boxShadow: `0 0 0 2px ${colors.face}, 0 0 0 4px #FFFFFF` },
+                ]}
+              />
+            ))}
+          </View>
         </Keycap>
       );
     }
@@ -229,20 +214,7 @@ export function KeyView({ keyDef: k, state, local, appIcons, onPress }: KeyViewP
 // Placeholder voice-channel avatars (real members come with Discord in M5).
 const AVATAR_COLORS = ['#3A2F6B', '#22394D', '#4A2A3A'];
 
-/** Fixed-height slot so labels line up across keys. */
-function IconSlot({ children }: { children: ReactNode }) {
-  return <View style={styles.iconSlot}>{children}</View>;
-}
-
-function Label({ text, lit }: { text: string; lit: boolean }) {
-  return (
-    <Text numberOfLines={1} style={[styles.label, { color: lit ? colors.ink : colors.text }]}>
-      {text}
-    </Text>
-  );
-}
-
-/** Album art filling the face, dimmed so the play button and label stay readable. */
+/** Album art filling the face, slightly dimmed so the play button stands out. */
 function AlbumArt({ uri }: { uri: string | null }) {
   return (
     <View style={StyleSheet.absoluteFill}>
@@ -255,46 +227,47 @@ function AlbumArt({ uri }: { uri: string | null }) {
           <View style={styles.artDot} />
         </View>
       )}
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.35)' }]} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.2)' }]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  iconSlot: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  appIcon: { width: 44, height: 44 }, // same height as the icon slot, so labels line up with other keys
-  runningDot: { position: 'absolute', top: 10, right: 10, width: 7, height: 7, borderRadius: 4 },
-  label: {
-    fontFamily: fonts.ui600,
-    fontSize: 12,
-    letterSpacing: 0.12,
-    maxWidth: 112,
-    includeFontPadding: false,
+  appIcon: { width: 76, height: 76 },
+  runningDot: {
+    position: 'absolute',
+    top: 9,
+    right: 9,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#FFFFFF',
+    boxShadow: '0 0 0 2px rgba(0,0,0,0.45), 0 0 8px rgba(255,255,255,0.8)',
   },
   bigNumber: {
     fontFamily: fonts.mono500,
-    fontSize: 34,
-    letterSpacing: -1,
-    lineHeight: 36,
+    fontSize: 44,
+    letterSpacing: -1.5,
+    lineHeight: 48,
+    marginTop: 2,
     includeFontPadding: false,
   },
   fill: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopWidth: 2 },
   playButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: 'rgba(255,255,255,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  timerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  timerRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   recDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.ink },
-  timer: { fontFamily: fonts.mono500, fontSize: 28, letterSpacing: -0.84, includeFontPadding: false },
+  timer: { fontFamily: fonts.mono500, fontSize: 30, letterSpacing: -1, includeFontPadding: false },
   avatars: { flexDirection: 'row' },
-  avatar: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, borderColor: colors.face },
-  swatches: { flexDirection: 'row', gap: 7 },
-  swatch: { width: 14, height: 14, borderRadius: 7 },
-  swatchBig: { width: 30, height: 30, borderRadius: 15 },
+  avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: colors.face },
+  swatches: { flexDirection: 'row', gap: 10 },
+  swatch: { width: 22, height: 22, borderRadius: 11 },
   artBlob: {
     position: 'absolute',
     left: -24,

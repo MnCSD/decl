@@ -8,3 +8,6 @@ dist/
 .expo/
 apps/deck/android/
 apps/deck/ios/
+
+# Playwright MCP screenshots/snapshots
+.playwright-mcp/

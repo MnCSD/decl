@@ -13,10 +13,12 @@ interface RingProps {
   textColor: string;
   size?: number;
   fontSize?: number;
+  /** Tiny text under the value, inside the ring (e.g. "CPU"). */
+  caption?: string;
 }
 
 /** Small circular progress ring with a value in the middle (CPU °, GPU °, focus timer). */
-export function Ring({ progress, text, color, trackColor, textColor, size = 46, fontSize = 13 }: RingProps) {
+export function Ring({ progress, text, color, trackColor, textColor, size = 46, fontSize = 13, caption }: RingProps) {
   const filled = Math.max(0, Math.min(1, progress)) * CIRCUMFERENCE;
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
@@ -36,10 +38,14 @@ export function Ring({ progress, text, color, trackColor, textColor, size = 46, 
         />
       </Svg>
       <Text style={[styles.text, { color: textColor, fontSize }]}>{text}</Text>
+      {caption ? (
+        <Text style={[styles.caption, { color: textColor, fontSize: Math.round(fontSize * 0.5) }]}>{caption}</Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   text: { fontFamily: fonts.mono500, includeFontPadding: false },
+  caption: { fontFamily: fonts.ui700, letterSpacing: 1, opacity: 0.75, marginTop: 1, includeFontPadding: false },
 });

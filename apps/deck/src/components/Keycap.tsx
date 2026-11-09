@@ -9,6 +9,8 @@ interface KeycapProps {
   /** Glow around the cap without filling the face (app keys while the app is running). */
   glow?: boolean;
   color: string;
+  /** Face color when not lit (app keys use the app's brand color). Default: dark face. */
+  faceColor?: string;
   accessibilityLabel: string;
   onPress?: () => void;
   /** Extra layers drawn inside the face behind the content (fills, album art). */
@@ -30,6 +32,7 @@ export function Keycap({
   lit,
   glow = false,
   color,
+  faceColor = colors.face,
   accessibilityLabel,
   onPress,
   background,
@@ -64,9 +67,11 @@ export function Keycap({
           { transform: [{ translateY: offset }] },
         ]}
       >
-        <View style={[styles.face, { backgroundColor: lit ? color : colors.face }]}>
+        <View style={[styles.face, { backgroundColor: lit ? color : faceColor }]}>
           {background}
           {children}
+          {/* Soft highlight across the top, like light on the glass over an LCD key. */}
+          <View pointerEvents="none" style={styles.gloss} />
         </View>
       </Animated.View>
     </Pressable>
@@ -101,7 +106,15 @@ const styles = StyleSheet.create({
     boxShadow: shadows.faceRing,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+  },
+  gloss: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: KEY.faceRadius,
+    boxShadow: shadows.faceGloss,
   },
   empty: {
     opacity: 0.35,

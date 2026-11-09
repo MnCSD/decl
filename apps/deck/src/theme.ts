@@ -53,5 +53,8 @@ export const shadows = {
   capLit: (color: string) =>
     `0 0 34px ${withAlpha(color, 0.45)}, 0 10px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.10)`,
   faceRing: 'inset 0 0 0 1px rgba(0,0,0,0.6)',
+  /** Glassy top highlight + slight dark rim on key faces. */
+  faceGloss:
+    'inset 0 22px 22px -16px rgba(255,255,255,0.22), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -10px 18px -10px rgba(0,0,0,0.35)',
   glow: (color: string, blur: number, alpha: number) => `0 0 ${blur}px ${withAlpha(color, alpha)}`,
 };

@@ -100,10 +100,13 @@ const SwatchesKeySchema = z
   .strict();
 
 /**
- * Launches/focuses an app from the agent's allow-list and shows its real icon.
- * Glows in the category color while the app is running. Tap = `app.launch`.
+ * Launches/focuses an app from the agent's allow-list and shows its real icon
+ * on a tile in the app's brand `color` (category color if omitted).
+ * Glows while the app is running. Tap = `app.launch`.
  */
-const AppKeySchema = z.object({ ...common, type: z.literal('app'), app: AppIdSchema }).strict();
+const AppKeySchema = z
+  .object({ ...common, type: z.literal('app'), app: AppIdSchema, color: hexColor.optional() })
+  .strict();
 
 export const KeySchema = z.discriminatedUnion('type', [
   AppKeySchema,

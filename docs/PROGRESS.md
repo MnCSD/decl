@@ -57,12 +57,15 @@ The user approves each milestone before the next one starts.
 | Shut down / Restart get **no key** until the M6 long-press menu | Avoid turning the PC off by accident. Tap on Sleep = sleep. |
 | Fonts imported per weight (`@expo-google-fonts/inter/600SemiBold`) | Importing the package root bundles all 36 font files (~12 MB). |
 | Browser preview (`react-dom`, `react-native-web`) installed | Lets the agent screenshot/verify the UI with Playwright. Not used on the tablet. |
+| **Stream Deck-style LCD keys: artwork only, no text labels** (all key types) | User's choice (2026-11-09), from a hardware stream-deck photo. Big full-face artwork + glossy top highlight. Labels remain as `accessibilityLabel`. |
+| App keys use an optional brand `color` (layout JSON) as the tile color, falling back to the category color | Windows icons have transparent backgrounds; the tile color makes them read like full-bleed app tiles. |
 
 ## Design deviations from Deck D (intentional)
 - Ring keys (CPU/GPU/Focus) and the Stream folder key: the design draws the arc/icon in the same color as the lit face (invisible). They use dark ink `#0A0A0C` instead.
 - Pages 02 Voice, 03 Apps, 04 Lights were not specified: Voice and Lights got example keys, Apps holds app keys. Edit the JSON freely.
 - Keys with no action yet: Squad (Discord voice members, M5), Layout, To phone. They press but do nothing.
 - Page track is absolutely centered so it doesn't shift when the mic chip changes width.
+- **No text labels on keys** (Deck D has a label under every icon). To keep similar keys distinguishable: ring keys show a tiny "CPU"/"GPU" caption inside the ring, value keys show a small icon (speaker/bulb) above the number, and the OBS scene keys use distinct icons (gamepad / chat / coffee). Single-color swatch keys fill the whole face with that color.
 
 ## Gotchas (learned the hard way)
 - **Windows PowerShell 5.1** strips inner double quotes when calling programs: write JSON as `'{\"scene\":\"Chat\"}'`. For some programs (seen with `claude mcp add`) it also swallows a bare `--`: quote it as `'--'`. `npm run x -- args` is fine.
@@ -75,7 +78,7 @@ The user approves each milestone before the next one starts.
 
 ## Environment notes
 - Development currently happens on a **work laptop**, not the gaming PC: no NVIDIA GPU, no Android SDK, network `192.168.102.x` (home network is `192.168.2.x`). Use the mock agent here; PC-specific checks (sleep, GPU temp, Discord, Steam, WoL) happen at home.
-- The project is **not a git repo yet**. Plan: `git init`, first commit, push to a private GitHub repo to move it to the home PC.
+- Git repo initialized; first commit `M1-M2`. Now also being developed on the home PC (`192.168.2.x`), where Discord and League are installed.
 - Agent data folder: `%APPDATA%\DeskDeck\` → `devices.json` (paired devices), `apps.json` (app allow-list), `cli-client.json` (CLI test client's token).
 
 ## Design source
