@@ -9,7 +9,7 @@ Last updated: 2026-11-09. Original requirements: [PROJECT_BRIEF.md](PROJECT_BRIE
 | M1 — Monorepo + protocol + agent skeleton | ✅ Done |
 | M2 — Tablet app shell (Deck D UI) | ✅ Done (+ real app icons, pulled forward on request) |
 | M3 — Connect + core actions | ✅ Done |
-| Discord (pulled forward from M5, user's choice) | 🔍 Built, waiting for the user's check |
+| Discord (pulled forward from M5, user's choice) | ✅ Done (+ incoming calls, ringtone) |
 | M4 — Wake-on-LAN + asleep state | Not started |
 | M5 — OBS, Yeelight, Modes, Focus timer (Discord done early) | Not started |
 | M6 — Interactions & profiles | Not started (swipe-to-adjust already done in M3) |

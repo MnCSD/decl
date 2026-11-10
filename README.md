@@ -8,7 +8,7 @@ and controls a Windows PC (system, media, volume, apps, later Discord, OBS, Yeel
 
 ## Status
 
-M1 ✅ agent + protocol · M2 ✅ tablet UI (+ real app icons) · M3 ✅ pairing, live connection, System/Media/Volume actions · **Discord 🔍 ready for your check** (pulled forward from M5) · M4 next: Wake-on-LAN + asleep state.
+M1 ✅ agent + protocol · M2 ✅ tablet UI (+ real app icons) · M3 ✅ pairing, live connection, System/Media/Volume actions · Discord ✅ (voice, squad, incoming calls; pulled forward from M5) · **M4 next**: Wake-on-LAN + asleep state.
 
 ## Project layout
 
