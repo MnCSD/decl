@@ -10,6 +10,7 @@ import { WindowsPlatform } from './platform/windows/windows-platform';
 import { DeviceStore } from './security/device-store';
 import { PairingManager } from './security/pairing';
 import { DeckServer } from './server';
+import { loadRingtone } from './sounds';
 import { StateStore } from './state-store';
 
 /** IPv4 addresses of this PC's network adapters, to show where the tablet should connect. */
@@ -45,12 +46,13 @@ async function main(): Promise<void> {
     createInitialState({ version: AGENT_VERSION, mock: config.mock, hostname: os.hostname() }),
   );
   const apps = loadAppsConfig(path.join(config.dataDir, 'apps.json'), log);
-  const platform: Platform = config.mock ? new MockPlatform(log, apps) : new WindowsPlatform(log, apps);
+  const platform: Platform = config.mock ? new MockPlatform(log, apps) : new WindowsPlatform(log, apps, config.dataDir);
 
   log.info({ platform: platform.name, dataDir: config.dataDir, pairedDevices: devices.list().length }, 'Starting Desk Deck agent');
 
   // Claim the port first, so a second copy fails fast instead of starting pollers.
-  const server = new DeckServer({ host: config.host, port: config.port, store, devices, pairing, platform, log });
+  const ringtone = loadRingtone(config.dataDir, log);
+  const server = new DeckServer({ host: config.host, port: config.port, store, devices, pairing, platform, log, ringtone });
   try {
     await server.start();
   } catch (err) {

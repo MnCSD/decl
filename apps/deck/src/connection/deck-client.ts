@@ -24,6 +24,8 @@ export interface DeckClientEvents {
   onStatus: (status: ConnectionStatus) => void;
   onState: (state: DeckState) => void;
   onIcons: (icons: Record<string, string>) => void;
+  /** Custom ringtone from the PC (data: URL), or null = use the built-in chime. */
+  onRingtone: (ringtone: string | null) => void;
   /** The agent no longer knows our token (device removed on the PC). We must pair again. */
   onUnpaired: () => void;
 }
@@ -199,6 +201,9 @@ export class DeckClient {
         return;
       case 'appIcons':
         this.events.onIcons(msg.icons);
+        return;
+      case 'sounds':
+        this.events.onRingtone(msg.ringtone);
         return;
       case 'result': {
         const p = this.pending.get(msg.id);

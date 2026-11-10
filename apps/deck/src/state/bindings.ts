@@ -12,6 +12,8 @@ function readLitSource(source: LitSource, s: DeckState): boolean | string | null
       return s.voice.micMuted;
     case 'voice.deafened':
       return s.voice.deafened;
+    case 'voice.inCall':
+      return s.voice.channel !== null;
     case 'volume.muted':
       return s.volume?.muted ?? null;
     case 'obs.scene':

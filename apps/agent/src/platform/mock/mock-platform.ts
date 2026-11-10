@@ -11,6 +11,9 @@ const TRACKS = [
   { title: 'Nightcall', artist: 'Kavinsky' },
 ];
 
+/** Fake voice channel; the last one is "us". */
+const MOCK_MEMBERS = ['Nikos', 'Eleni', 'Kostas', 'You'];
+
 const MODE_LIGHT: Record<ModeId, { on: boolean; brightness: number; rgb: string }> = {
   gaming: { on: true, brightness: 70, rgb: '#A78BFA' },
   study: { on: true, brightness: 90, rgb: '#FFF4E0' },
@@ -33,6 +36,7 @@ export class MockPlatform implements Platform {
   private store!: StateStore;
   private timer: NodeJS.Timeout | null = null;
   private trackIndex = 0;
+  private seconds = 0;
   private icons: Promise<Record<string, string>> | null = null;
 
   constructor(
@@ -55,7 +59,21 @@ export class MockPlatform implements Platform {
     store.set('system', { uptimeSec: 3 * 3600 + 12 * 60, cpuPercent: 14, cpuTempC: 52, gpuTempC: 38 });
     store.set('volume', { level: 72, muted: false });
     store.set('media', { playing: true, ...TRACKS[0]!, artUrl: null });
-    store.set('voice', { micMuted: true, deafened: false });
+    store.set('voice', {
+      link: 'connected',
+      micMuted: true,
+      deafened: false,
+      channel: { name: 'Duo queue', memberCount: 4 },
+      incomingCall: null,
+      members: MOCK_MEMBERS.map((name, i) => ({
+        id: String(1000 + i),
+        name,
+        avatarUrl: null, // the tablet draws initials
+        speaking: false,
+        muted: false,
+        deafened: false,
+      })),
+    });
     store.set('obs', {
       connected: true,
       scene: 'Game',
@@ -83,6 +101,16 @@ export class MockPlatform implements Platform {
       gpuTempC: wander(s.gpuTempC ?? 40, 1, 33, 80),
     }));
     this.store.update('obs', (o) => (o.recording ? { ...o, recordingSec: o.recordingSec + 1 } : o));
+    // Friends talk now and then (not us: we're the last member).
+    this.store.update('voice', (v) => ({
+      ...v,
+      members: v.members.map((m, i) => ({ ...m, speaking: i < v.members.length - 1 && Math.random() < 0.35 })),
+    }));
+    // A fake incoming call: rings 10 s after start for 30 s, then every 2 minutes.
+    this.seconds++;
+    const t = this.seconds % 120;
+    if (t === 10) this.store.update('voice', (v) => ({ ...v, incomingCall: { name: 'Eleni', avatarUrl: null } }));
+    if (t === 40) this.store.update('voice', (v) => ({ ...v, incomingCall: null }));
   }
 
   async runAction(req: ActionRequest): Promise<void> {
@@ -119,7 +147,16 @@ export class MockPlatform implements Platform {
         return;
       case 'discord.toggleDeafen':
         // Discord also mutes the mic while deafened.
-        s.update('voice', (v) => ({ micMuted: !v.deafened ? true : v.micMuted, deafened: !v.deafened }));
+        s.update('voice', (v) => ({ ...v, micMuted: !v.deafened ? true : v.micMuted, deafened: !v.deafened }));
+        return;
+      case 'discord.answerCall': {
+        const call = s.get().voice.incomingCall;
+        if (!call) throw new ActionError('Nobody is calling');
+        s.update('voice', (v) => ({ ...v, incomingCall: null, channel: { name: call.name, memberCount: v.members.length } }));
+        return;
+      }
+      case 'discord.dismissCall':
+        s.update('voice', (v) => ({ ...v, incomingCall: null }));
         return;
 
       case 'obs.setScene': {

@@ -1,6 +1,7 @@
-import type { AdjustId, DeckKey, DeckLayout, DeckState } from '@deck/protocol';
+import type { ActionId, AdjustId, DeckKey, DeckLayout, DeckState } from '@deck/protocol';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { IncomingCall } from '../components/IncomingCall';
 import { KeyGrid } from '../components/KeyGrid';
 import { TopBar } from '../components/TopBar';
 import type { ConnectionStatus } from '../connection/deck-client';
@@ -12,13 +13,17 @@ interface DeckScreenProps {
   state: DeckState;
   status: ConnectionStatus;
   appIcons: Record<string, string>;
+  /** Custom ringtone from the PC, or null = built-in chime. */
+  ringtone: string | null;
   onKeyPress: (key: DeckKey) => void;
   onAdjust: (adjustId: AdjustId, value: number) => void;
+  /** Actions not tied to a key (incoming-call banner). */
+  onAction: (actionId: ActionId) => void;
   onForgetPc: () => void;
 }
 
 /** The main deck: top bar + 8×4 key grid. Laid out at the 1340×800 design size. */
-export function DeckScreen({ layout, state, status, appIcons, onKeyPress, onAdjust, onForgetPc }: DeckScreenProps) {
+export function DeckScreen({ layout, state, status, appIcons, ringtone, onKeyPress, onAdjust, onAction, onForgetPc }: DeckScreenProps) {
   const profile = layout.profiles.find((p) => p.id === state.profile.id) ?? layout.profiles[0]!;
   const pages = profile.pages;
 
@@ -70,6 +75,14 @@ export function DeckScreen({ layout, state, status, appIcons, onKeyPress, onAdju
           onSwipe={(delta) => goToPage(safeIndex + delta)}
         />
       </View>
+      {status === 'online' && state.voice.incomingCall ? (
+        <IncomingCall
+          call={state.voice.incomingCall}
+          ringtone={ringtone}
+          onAnswer={() => onAction('discord.answerCall')}
+          onDismiss={() => onAction('discord.dismissCall')}
+        />
+      ) : null}
     </View>
   );
 }

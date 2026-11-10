@@ -12,7 +12,7 @@
           "keys": [
             { "id": "mic", "type": "button", "category": "stream", "label": "Mic live", "onLabel": "Muted", "icon": "mic", "onIcon": "micOff", "actionId": "discord.toggleMute", "lit": { "source": "voice.micMuted" } },
             { "id": "deafen", "type": "button", "category": "comms", "label": "Deafen", "onLabel": "Deafened", "icon": "headphones", "actionId": "discord.toggleDeafen", "lit": { "source": "voice.deafened" } },
-            { "id": "squad", "type": "squad", "category": "comms", "label": "Squad · 4", "lit": "always" },
+            { "id": "squad", "type": "squad", "category": "comms", "label": "Squad", "lit": { "source": "voice.inCall" } },
             { "id": "discord", "type": "app", "category": "comms", "label": "Discord", "app": "discord", "color": "#5865F2" },
             { "id": "nowPlaying", "type": "nowPlaying", "category": "media", "label": "Now playing", "actionId": "media.playPause" },
             { "id": "next", "type": "button", "category": "media", "label": "Next", "icon": "next", "actionId": "media.next" },
@@ -53,7 +53,7 @@
           "keys": [
             { "id": "v-mic", "type": "button", "category": "stream", "label": "Mic live", "onLabel": "Muted", "icon": "mic", "onIcon": "micOff", "actionId": "discord.toggleMute", "lit": { "source": "voice.micMuted" } },
             { "id": "v-deafen", "type": "button", "category": "comms", "label": "Deafen", "onLabel": "Deafened", "icon": "headphones", "actionId": "discord.toggleDeafen", "lit": { "source": "voice.deafened" } },
-            { "id": "v-squad", "type": "squad", "category": "comms", "label": "Squad · 4", "lit": "always" },
+            { "id": "v-squad", "type": "squad", "category": "comms", "label": "Squad", "lit": { "source": "voice.inCall" } },
             { "id": "v-discord", "type": "app", "category": "comms", "label": "Discord", "app": "discord", "color": "#5865F2" },
             null, null, null,
             { "id": "v-dnd", "type": "button", "category": "modes", "label": "DND", "onLabel": "DND on", "icon": "moon", "actionId": "dnd.toggle", "lit": { "source": "modes.dnd" } },

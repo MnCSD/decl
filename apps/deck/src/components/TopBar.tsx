@@ -126,7 +126,12 @@ function StatusArea({
 
   return (
     <View style={styles.status}>
-      <Chip dot={muted ? categoryColors.stream : colors.live} text={muted ? 'MIC MUTED' : 'MIC LIVE'} />
+      {state.voice.link === 'connected' || status !== 'online' ? (
+        <Chip dot={muted ? categoryColors.stream : colors.live} text={muted ? 'MIC MUTED' : 'MIC LIVE'} />
+      ) : (
+        // Mic state comes from Discord; without it we can't know.
+        <Chip dot={colors.textFaint} text={state.voice.link === 'offline' ? 'DISCORD OFF' : 'DISCORD NOT LINKED'} glow={false} />
+      )}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={confirmForget ? 'Forget this PC' : `PC status: ${status}. Long-press to forget this PC`}

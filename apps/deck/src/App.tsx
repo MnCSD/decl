@@ -64,8 +64,10 @@ function Main({ layout }: { layout: DeckLayout }) {
       state={deck.state}
       status={deck.status}
       appIcons={deck.icons}
+      ringtone={deck.ringtone}
       onKeyPress={(key) => void deck.pressKey(key)}
       onAdjust={deck.adjust}
+      onAction={(actionId) => void deck.runAction(actionId)}
       onForgetPc={() => void deck.forget()}
     />
   );

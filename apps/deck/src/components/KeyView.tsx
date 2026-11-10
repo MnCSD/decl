@@ -7,6 +7,7 @@ import { Icon } from './Icon';
 import { Keycap } from './Keycap';
 import { NowPlayingKey } from './NowPlayingKey';
 import { Ring } from './Ring';
+import { SquadKey } from './SquadKey';
 import { ValueKey } from './ValueKey';
 
 interface KeyViewProps {
@@ -131,25 +132,8 @@ export function KeyView({ keyDef: k, state, local, appIcons, onPress, onAdjust }
         </Keycap>
       );
 
-    case 'squad': {
-      const lit = isLit(k.lit, state);
-      return (
-        <Keycap lit={lit} color={color} accessibilityLabel={k.label} onPress={press}>
-          <View style={styles.avatars}>
-            {AVATAR_COLORS.map((c, i) => (
-              <View
-                key={c}
-                style={[
-                  styles.avatar,
-                  { backgroundColor: c, marginLeft: i === 0 ? 0 : -14 },
-                  i === 0 && { boxShadow: `0 0 0 2px ${color}` },
-                ]}
-              />
-            ))}
-          </View>
-        </Keycap>
-      );
-    }
+    case 'squad':
+      return <SquadKey keyDef={k} voice={state.voice} onPress={onPress} />;
 
     case 'swatches': {
       const lit = isLit(k.lit, state);
@@ -177,9 +161,6 @@ export function KeyView({ keyDef: k, state, local, appIcons, onPress, onAdjust }
   }
 }
 
-// Placeholder voice-channel avatars (real members come with Discord in M5).
-const AVATAR_COLORS = ['#3A2F6B', '#22394D', '#4A2A3A'];
-
 const styles = StyleSheet.create({
   appIcon: { width: 76, height: 76 },
   runningDot: {
@@ -195,8 +176,6 @@ const styles = StyleSheet.create({
   timerRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   recDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.ink },
   timer: { fontFamily: fonts.mono500, fontSize: 30, letterSpacing: -1, includeFontPadding: false },
-  avatars: { flexDirection: 'row' },
-  avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: colors.face },
   swatches: { flexDirection: 'row', gap: 10 },
   swatch: { width: 22, height: 22, borderRadius: 11 },
 });

@@ -44,6 +44,8 @@ export interface ServerDeps {
   pairing: PairingManager;
   platform: Platform;
   log: Logger;
+  /** Custom ringtone (data: URL) from the data folder, or null for the tablet's built-in chime. */
+  ringtone?: string | null;
 }
 
 export class DeckServer {
@@ -222,6 +224,7 @@ export class DeckServer {
     this.send(client.ws, { type: 'welcome', deviceId: device.id, deviceName: device.name });
     this.send(client.ws, { type: 'state', state: this.deps.store.get() });
     void this.sendAppIcons(client);
+    this.send(client.ws, { type: 'sounds', ringtone: this.deps.ringtone ?? null });
   }
 
   /** Icons can take a few seconds to extract at startup, so they're sent when ready. */

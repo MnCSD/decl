@@ -8,9 +8,10 @@ Last updated: 2026-11-09. Original requirements: [PROJECT_BRIEF.md](PROJECT_BRIE
 |---|---|
 | M1 — Monorepo + protocol + agent skeleton | ✅ Done |
 | M2 — Tablet app shell (Deck D UI) | ✅ Done (+ real app icons, pulled forward on request) |
-| M3 — Connect + core actions | 🔍 Built, waiting for the user's check |
+| M3 — Connect + core actions | ✅ Done |
+| Discord (pulled forward from M5, user's choice) | 🔍 Built, waiting for the user's check |
 | M4 — Wake-on-LAN + asleep state | Not started |
-| M5 — Discord, OBS, Yeelight, Modes, Focus timer | Not started |
+| M5 — OBS, Yeelight, Modes, Focus timer (Discord done early) | Not started |
 | M6 — Interactions & profiles | Not started (swipe-to-adjust already done in M3) |
 | M7 — Polish | Not started |
 
@@ -22,7 +23,7 @@ The user approves each milestone before the next one starts.
 - `packages/protocol`: zod schemas shared by agent and app. Action ids + per-action params (`actions.ts`), `DeckState` (`state.ts`), client/server messages with a `v: 1` version field (`messages.ts`), layout schema (`layout.ts`). Used as TypeScript source (no build step): the agent runs it via `tsx`, Metro bundles it for the app.
 - `apps/agent`: WebSocket server on 4343 (`server.ts`), pairing (`security/pairing.ts`), paired devices with hashed tokens (`security/device-store.ts`), LAN-only filter (`security/net.ts`), state store, platform split (`platform/windows`, `platform/mock`), CLI test client (`cli/client.ts`).
 - Real Windows status: uptime, CPU % (from `os.cpus()`), CPU temp via WMI (often unavailable without admin), GPU temp via `nvidia-smi`.
-- Windows actions: see M3 below. Discord/OBS/light/modes still throw "not implemented on Windows yet" (M5).
+- Windows actions: see M3 and Discord below. OBS/light/modes still throw "not implemented on Windows yet" (M5).
 
 ### M2 — tablet app (`apps/deck`)
 - Expo SDK 58, React Native 0.88, New Architecture, runs in **Expo Go** for now.
@@ -46,7 +47,7 @@ The user approves each milestone before the next one starts.
 - Volume get/set/mute: Core Audio `IAudioEndpointVolume` on the default playback device (looked up per call, so switching devices works).
 - Now playing + play/pause/next/previous: SMTC (`GlobalSystemMediaTransportControlsSessionManager`, the API behind the Windows media flyout). Falls back to media keys (`keybd_event`) when no app has a media session. Album art: 240 px JPEG data URL (~10 KB), read once per track. The now-playing key (`NowPlayingKey.tsx`) shows the art edge to edge: playing = bright art + glowing cap + animated equalizer badge; paused = dimmed art + play triangle.
 - `MediaVolumePoller` (`media-volume.ts`) polls volume + media every 1 s (so changes made on the PC show up) and right after media/volume actions. Helper output is validated with zod.
-- Lock: `LockWorkStation`. Screens off: `PostMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, 2)`. Sleep: `Application.SetSuspendState(Suspend)` (helper replies first, then sleeps after 500 ms). Screenshot: all monitors (DPI-aware) → `PicturesScreenshotsDeskDeck_<local time>.png` (Pictures path from Windows, follows OneDrive). Shutdown/restart: `shutdown.exe /s|/r /t 0` (no key yet).
+- Lock: `LockWorkStation`. Screens off: `PostMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, 2)`. Sleep: `Application.SetSuspendState(Suspend)` (helper replies first, then sleeps after 500 ms). Screenshot: all monitors (DPI-aware) → `Pictures\Screenshots\DeskDeck_<local time>.png` (Pictures path from Windows, follows OneDrive). Shutdown/restart: `shutdown.exe /s|/r /t 0` (no key yet).
 - Test: `helper.test.ts` starts the real helper on Windows (read-only commands only).
 
 **Tablet**
@@ -58,6 +59,26 @@ The user approves each milestone before the next one starts.
 - Failed action: error haptic + console warning (red key flash is M7).
 - **Swipe-to-adjust on value keys** (pulled forward from M6 at the user's request): `components/ValueKey.tsx`. Vertical drag (claimed when |dy| > 8 px and more vertical than horizontal; the grid keeps horizontal page swipes) sets 0–100, 180 design-px = full range, corrected for the screen scale. Shows the finger value immediately, sends `adjust` at most every 80 ms plus the final value, holds the local value 1.2 s after release so it doesn't jump back. Haptic tick every 10 %. Tap still = the key's action (mute / light toggle). Volume > 0 unmutes (agent side).
 - `components/press-guard.ts`: drags (value adjust, page swipe) block key presses until 350 ms after they end, so releasing a drag never also counts as a tap.
+
+### Discord (pulled forward from M5)
+**Agent** (`platform/windows/discord/`)
+- `ipc.ts`: client for Discord's local RPC on the named pipe `\\?\pipe\discord-ipc-0..9`. Frames = int32 LE opcode + int32 LE length + JSON. Handshake `{v:1, client_id}` → READY; commands matched by random `nonce`; PING answered with PONG; replies with `evt: "ERROR"` become `DiscordRpcError` (with Discord's code).
+- `credentials.ts`: `discord.json` in the data dir (clientId, clientSecret, accessToken, refreshToken, expiresAt), validated with zod. Token exchange/refresh: form-encoded POST to `https://discord.com/api/oauth2/token`, redirect URI `http://localhost`. Scopes `rpc rpc.voice.read rpc.voice.write`. Errors only include Discord's short error code, never bodies/tokens.
+- `discord-voice.ts`: retries every 5 s (finds Discord when it starts, picks up a fresh setup without restarting the agent; logs each new problem once). AUTHENTICATE with the saved token (refreshes a day before expiry, or once when Discord rejects it; if that fails → `notSetUp`). Subscribes `VOICE_SETTINGS_UPDATE` + `VOICE_CHANNEL_SELECT`; for the current channel `VOICE_STATE_CREATE/UPDATE/DELETE` + `SPEAKING_START/STOP` (unsubscribes when switching channels). Mute/deafen = `SET_VOICE_SETTINGS {mute|deaf: !current}`. `micMuted` = mute OR deaf (Discord mutes while deafened).
+- `avatars.ts`: downloads `cdn.discordapp.com` avatars (64 px; default avatar `(id >> 22) % 6` when none) once per user+avatar, as data URLs. id/hash are regex-checked before going into a URL; 256 KB cap.
+- `cli/discord-setup.ts` (`npm run discord:setup`): asks Client ID/Secret, AUTHORIZE (popup in Discord, 2 min), exchanges the code, AUTHENTICATEs, saves.
+- Tests: `discord.test.ts` runs a fake Discord on a test pipe (split frames, concurrent requests, errors, events; full DiscordVoice flow without internet).
+
+- **Incoming calls** (user asked; found by experiment): Discord has no call event, but a ringing call produces a `NOTIFICATION_CREATE` (scope `rpc.notifications.read`) whose `message.type` is **3 (CALL)** with the call's `channel_id`. Ringing ends when we join that channel (`VOICE_CHANNEL_SELECT`), the caller leaves (`GET_CHANNEL` every 2 s; "empty" only trusted after the caller was seen), on dismiss, or after 60 s. `discord.answerCall` = `SELECT_VOICE_CHANNEL {channel_id, force: true}` (the channel id never comes from the tablet). `discord.dismissCall` only hides it on the deck. Notification text is never read or logged.
+- `discord.json` is watched: re-running setup reconnects with the new login (own token refreshes are ignored by comparing the refresh token).
+
+**Protocol**: `voice` now has `link` (`notSetUp | offline | connected`), `channel` (`{name, memberCount}` or null) and `members` (max 6: others first, us last; `avatarUrl`, `speaking`, `muted`, `deafened`). New lit source `voice.inCall`. `voice.incomingCall` (`{name, avatarUrl}` or null). Actions `discord.answerCall`, `discord.dismissCall`.
+
+**Incoming call banner** (`components/IncomingCall.tsx`): slides down over the top bar on any page; caller avatar with a pulsing green ring, Ignore (X) and Answer (phone) buttons; tablet buzzes every 1.5 s while ringing. The **squad key** also turns into a ringing key (caller avatar, two green ripples clipped by the face, wiggling phone badge, green glow); tapping it answers (`useDeck.pressKey` maps a squad press to `discord.answerCall` while ringing).
+
+**Ringtone**: the banner plays a looping ringtone (expo-audio, Expo Go-compatible) at 60 % volume. Default: `assets/sounds/ring-chime.wav`, an original two-note chime generated in code for this app. Custom: the user puts `ringtone.mp3|wav|ogg|m4a` (max 2 MB) in `%APPDATA%\DeskDeck\sounds\`; the agent reads it at startup (`sounds.ts`) and sends it to paired tablets in a `sounds` message (data URL). Third-party sounds are never stored in the repo, only on the user's PC. The mock rings 10 s after start for 30 s, every 2 minutes.
+
+**Tablet**: `components/SquadKey.tsx`: up to 3 overlapping avatars (initials on a stable color if no image), green ring while talking, dimmed if deafened, "+N" badge; lit while in a call; three dashed empty seats when not in a call. The mic chip says DISCORD OFF / DISCORD NOT LINKED when the agent has no Discord link. The mock agent has a fake 4-person channel with random talking.
 
 ## Decisions (and why)
 
@@ -75,6 +96,9 @@ The user approves each milestone before the next one starts.
 | **Full-color app icons** with category-color glow while running | User's choice over tinted glyphs. |
 | Shut down / Restart get **no key** until the M6 long-press menu | Avoid turning the PC off by accident. Tap on Sleep = sleep. |
 | **Persistent PowerShell helper** for Windows APIs (user's choice, M3) | Spawning PowerShell + compiling C# costs ~0.5–1 s per call; too slow for keys and 1 s polling. No native Node modules needed. |
+| **Discord via local RPC, not hotkeys** (user's choice; brief said hotkeys) | Hotkeys can't read real mute/deafen state or who's in the call. Costs a one-time Discord developer app + `npm run discord:setup`. |
+| **Exception to "LAN only" for Discord** (user approved) | The *agent* makes outgoing HTTPS calls to discord.com: OAuth token exchange/refresh and avatar downloads. Nothing listens on the internet; the tablet stays LAN only (avatars are forwarded as data URLs). |
+| Discord was done before M4 (user's choice) | Keeps Expo Go working a bit longer; M4 needs the Android dev build. |
 | expo-secure-store (token) + AsyncStorage (address, icon cache) | Both in Expo Go. SecureStore isn't meant for big values (~2 KB historically on iOS), icons are ~100s of KB. |
 | Fonts imported per weight (`@expo-google-fonts/inter/600SemiBold`) | Importing the package root bundles all 36 font files (~12 MB). |
 | Browser preview (`react-dom`, `react-native-web`) installed | Lets the agent screenshot/verify the UI with Playwright. Not used on the tablet. |
@@ -92,10 +116,11 @@ The user approves each milestone before the next one starts.
 - **Windows PowerShell 5.1 + WinRT streams**: PowerShell can't cast a WinRT stream to `IInputStream` (neither `AsStreamForRead` nor `DataReader` accept it). Pass it to C# as `object` and use `CreateStreamOverRandomAccessStream` (shcore.dll) to get a COM `IStream`.
 - **react-native-web delivers a click after a PanResponder drag** that started on a Pressable (native cancels the press). Hence `press-guard.ts`. On web, gesture `dy` also seems to count from when the responder was granted, not from touch start.
 - **Spotify's SMTC thumbnail has its logo baked in**: a black square with the art (~78% wide, top-centered) and a "Spotify" bar below. `DeckHelper.cs` `SpotifyArtBounds` crops to the art when the session's `SourceAppUserModelId` contains "Spotify" (finds the black side margins; falls back to fixed fractions for very dark covers).
+- **Discord RPC is restricted**: scopes `rpc`, `rpc.voice.*` are "approved partners only"; unapproved apps work only for the app owner / up to 50 App Testers. Fine for personal use. Voice settings can be changed by only one RPC app at a time.
+- Discord's VOICE_SETTINGS_UPDATE docs example omits `mute`/`deaf`; the code only applies fields that are present and reads GET_VOICE_SETTINGS on connect.
 - In PowerShell, `continue`/`break` inside a `switch` act on the switch, not the surrounding loop.
 - React Native 0.88 removed `StyleSheet.absoluteFillObject` (use explicit `position/top/left/right/bottom`). TextInput refs are typed `ComponentRef<typeof TextInput>`.
-- Some repo files use CRLF line endings: multi-line string replacements from scripts must handle `
-` (the Edit tool handles it).
+- Some repo files use CRLF line endings: multi-line string replacements from scripts must handle `\r\n` (the Edit tool handles it).
 - **Windows PowerShell 5.1** strips inner double quotes when calling programs: write JSON as `'{\"scene\":\"Chat\"}'`. For some programs (seen with `claude mcp add`) it also swallows a bare `--`: quote it as `'--'`. `npm run x -- args` is fine.
 - Stopping a background `npm run …` on Windows can leave the `node` child running. Kill by port (`Get-NetTCPConnection -LocalPort 4343`).
 - Windows Defender/indexer can briefly lock a just-written file (`EPERM` on rename). `device-store.ts` retries.

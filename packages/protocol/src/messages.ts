@@ -112,6 +112,20 @@ export const AppIconsSchema = z.object({
   icons: z.record(AppIdSchema, z.string().startsWith('data:image/png;base64,').max(512 * 1024)),
 });
 
+/**
+ * Custom sounds from the PC's data folder (sounds\ringtone.*), sent once after `welcome`.
+ * null = no custom file; the tablet uses its built-in chime.
+ */
+export const SoundsSchema = z.object({
+  v,
+  type: z.literal('sounds'),
+  ringtone: z
+    .string()
+    .regex(/^data:audio\/(mpeg|wav|ogg|mp4|x-m4a);base64,/)
+    .max(3 * 1024 * 1024)
+    .nullable(),
+});
+
 export const ErrorMessageSchema = z.object({
   v,
   type: z.literal('error'),
@@ -127,6 +141,7 @@ export const ServerMessageSchema = z.discriminatedUnion('type', [
   ResultSchema,
   PongSchema,
   AppIconsSchema,
+  SoundsSchema,
   ErrorMessageSchema,
 ]);
 export type ServerMessage = z.infer<typeof ServerMessageSchema>;

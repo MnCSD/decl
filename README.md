@@ -8,7 +8,7 @@ and controls a Windows PC (system, media, volume, apps, later Discord, OBS, Yeel
 
 ## Status
 
-M1 ✅ agent + protocol · M2 ✅ tablet UI (+ real app icons) · **M3 🔍 ready for your check:** pairing, live connection, System/Media/Volume actions · M4 next: Wake-on-LAN + asleep state.
+M1 ✅ agent + protocol · M2 ✅ tablet UI (+ real app icons) · M3 ✅ pairing, live connection, System/Media/Volume actions · **Discord 🔍 ready for your check** (pulled forward from M5) · M4 next: Wake-on-LAN + asleep state.
 
 ## Project layout
 
@@ -32,6 +32,21 @@ The console shows a 6-digit pairing code (single use, valid 5 minutes, locks for
 Data lives in `%APPDATA%\DeskDeck\`:
 - `devices.json`: paired devices (token hashes only)
 - `apps.json`: apps the deck may launch (created on first run from installed apps; edit to add more)
+- `discord.json`: Discord app id/secret + login tokens (keep private)
+- `sounds\ringtone.mp3` (or `.wav`/`.ogg`/`.m4a`, max 2 MB, optional): ringtone the tablet plays for incoming Discord calls. Without it the tablet plays its built-in chime. Restart the agent after changing it.
+
+### Discord (one-time link)
+
+The deck reads your real mute/deafen state and voice channel through Discord's local RPC.
+
+1. https://discord.com/developers/applications → **New Application** → name it "Desk Deck".
+2. **OAuth2** page → Redirects → **Add Redirect** → `http://localhost` → **Save Changes**.
+   Copy the **Client ID**, then **Reset Secret** and copy the **Client Secret**.
+3. With Discord open on the PC: `npm run discord:setup`, paste both, then click **Authorize** in the Discord popup.
+
+The running agent picks it up within a few seconds and renews the login by itself.
+If the popup says the app isn't allowed, add yourself under **App Testers** in the developer portal.
+The agent contacts discord.com only for this login (and its weekly renewal) and to download voice-channel avatars.
 
 ## Test client (pretends to be the tablet)
 

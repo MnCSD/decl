@@ -1,4 +1,4 @@
-import { createInitialState, type AdjustId, type DeckKey, type DeckState } from '@deck/protocol';
+import { createInitialState, type ActionId, type AdjustId, type DeckKey, type DeckState } from '@deck/protocol';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
@@ -43,7 +43,11 @@ export function useDeck() {
   const [state, setState] = useState<DeckState>(EMPTY_STATE);
   const [icons, setIcons] = useState<Record<string, string>>({});
   const [unpairedReason, setUnpairedReason] = useState<string | null>(null);
+  const [ringtone, setRingtone] = useState<string | null>(null);
   const clientRef = useRef<DeckClient | null>(null);
+  // Latest state for callbacks that are created once (pressKey).
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // Startup: read the saved PC + cached icons.
   useEffect(() => {
@@ -65,6 +69,7 @@ export function useDeck() {
         setIcons(next);
         void saveIcons(next); // cached so app keys keep their icons while the PC is off
       },
+      onRingtone: setRingtone,
       onUnpaired: () => {
         void clearPairing();
         setUnpairedReason('The PC no longer knows this tablet. Pair again with a new code.');
@@ -108,7 +113,9 @@ export function useDeck() {
   }, []);
 
   const pressKey = useCallback(async (key: DeckKey) => {
-    const action = actionForKey(key);
+    // While a Discord call rings, the squad key answers it.
+    const ringing = key.type === 'squad' && stateRef.current.voice.incomingCall !== null;
+    const action = ringing ? { actionId: 'discord.answerCall' as const, params: {} } : actionForKey(key);
     const client = clientRef.current;
     if (!action || !client) return;
     const result = await client.runAction(action.actionId, action.params);
@@ -116,6 +123,17 @@ export function useDeck() {
       // M7 adds a red flash on the key; for now a warning buzz + log.
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       console.warn(`"${key.label}" failed: ${result.error ?? 'unknown error'}`);
+    }
+  }, []);
+
+  /** Actions that don't come from a key (e.g. the incoming-call banner). */
+  const runAction = useCallback(async (actionId: ActionId) => {
+    const client = clientRef.current;
+    if (!client) return;
+    const result = await client.runAction(actionId, {});
+    if (!result.ok) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      console.warn(`${actionId} failed: ${result.error ?? 'unknown error'}`);
     }
   }, []);
 
@@ -130,5 +148,5 @@ export function useDeck() {
     }
   }, []);
 
-  return { phase, pairing, status, state, icons, unpairedReason, pair, forget, pressKey, adjust };
+  return { phase, pairing, status, state, icons, ringtone, unpairedReason, pair, forget, pressKey, runAction, adjust };
 }

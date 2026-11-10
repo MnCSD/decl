@@ -31,9 +31,13 @@ export const ACTION_PARAMS = {
   'media.next': noParams,
   'media.previous': noParams,
   'volume.toggleMute': noParams,
-  // Discord (via global hotkeys)
+  // Discord (via its local RPC: the agent talks to the Discord app on the PC)
   'discord.toggleMute': noParams,
   'discord.toggleDeafen': noParams,
+  /** Join the call that's ringing (the agent knows which one; the tablet never sends a channel). */
+  'discord.answerCall': noParams,
+  /** Stop showing the ringing call on the deck (Discord keeps ringing on the PC). */
+  'discord.dismissCall': noParams,
   // OBS
   'obs.setScene': z.object({ scene: z.string().min(1).max(100) }).strict(),
   'obs.toggleRecord': noParams,

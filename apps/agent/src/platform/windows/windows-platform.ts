@@ -7,6 +7,7 @@ import type { Logger } from '../../logger';
 import type { StateStore } from '../../state-store';
 import { ActionError, type Platform } from '../types';
 import { AppManager } from './apps';
+import { DiscordVoice } from './discord/discord-voice';
 import { run } from './exec';
 import { WindowsHelper } from './helper';
 import { MediaVolumePoller } from './media-volume';
@@ -21,7 +22,7 @@ function localTimestamp(d: Date): string {
 /**
  * The real Windows PC.
  * Implemented: live system status, volume + now playing, system and media actions,
- * app launch/focus with real icons. Discord/OBS/lights/modes come in M5.
+ * app launch/focus with real icons, Discord voice (local RPC). OBS/lights/modes come in M5.
  */
 export class WindowsPlatform implements Platform {
   readonly name = 'windows';
@@ -30,10 +31,13 @@ export class WindowsPlatform implements Platform {
   private icons: Promise<Record<string, string>> | null = null;
   private helper: WindowsHelper;
   private mediaVolume: MediaVolumePoller | null = null;
+  private discord: DiscordVoice | null = null;
 
   constructor(
     private readonly log: Logger,
-    private readonly apps: AppEntry[] = [],
+    private readonly apps: AppEntry[],
+    /** Agent data folder (discord.json lives here) */
+    private readonly dataDir: string,
   ) {
     this.helper = new WindowsHelper(log);
   }
@@ -43,6 +47,8 @@ export class WindowsPlatform implements Platform {
     this.status = new SystemStatusPoller(store, this.log);
     this.appManager = new AppManager(this.apps, store, this.log);
     this.mediaVolume = new MediaVolumePoller(this.helper, store, this.log);
+    this.discord = new DiscordVoice(path.join(this.dataDir, 'discord.json'), store, this.log);
+    this.discord.start(); // connects in the background, retries until Discord is running
 
     const startHelper = this.helper
       .start()
@@ -58,6 +64,7 @@ export class WindowsPlatform implements Platform {
     this.status?.stop();
     this.appManager?.stop();
     this.mediaVolume?.stop();
+    this.discord?.stop();
     this.helper.stop();
   }
 
@@ -91,6 +98,15 @@ export class WindowsPlatform implements Platform {
         void this.mediaVolume?.poll();
         setTimeout(() => void this.mediaVolume?.poll(), 400);
         return;
+
+      case 'discord.toggleMute':
+        return this.discord!.toggleMute();
+      case 'discord.toggleDeafen':
+        return this.discord!.toggleDeafen();
+      case 'discord.answerCall':
+        return this.discord!.answerCall();
+      case 'discord.dismissCall':
+        return this.discord!.dismissCall();
 
       default:
         throw new ActionError(`"${req.actionId}" is not implemented on Windows yet`);

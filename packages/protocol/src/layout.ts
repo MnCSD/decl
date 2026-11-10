@@ -19,6 +19,7 @@ export type Category = z.infer<typeof CategorySchema>;
 export const LIT_SOURCES = [
   'voice.micMuted',
   'voice.deafened',
+  'voice.inCall',
   'volume.muted',
   'obs.scene',
   'obs.recording',

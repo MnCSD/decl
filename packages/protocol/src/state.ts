@@ -3,6 +3,20 @@ import { AppIdSchema, ModeIdSchema } from './actions';
 
 const percent = z.number().min(0).max(100);
 
+/** Most voice-channel members sent to the tablet (the squad key shows 3 + a count). */
+export const MAX_VOICE_MEMBERS = 6;
+
+const VoiceMemberSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  /** data: URL (the agent downloads avatars so the tablet stays LAN only), or null */
+  avatarUrl: z.string().nullable(),
+  speaking: z.boolean(),
+  muted: z.boolean(),
+  deafened: z.boolean(),
+});
+export type VoiceMember = z.infer<typeof VoiceMemberSchema>;
+
 /**
  * Everything the tablet needs to draw live keys.
  * The agent sends the whole object (a "snapshot") on connect and on every change.
@@ -36,8 +50,31 @@ export const DeckStateSchema = z.object({
     })
     .nullable(),
   voice: z.object({
+    /**
+     * Link to the Discord app on the PC.
+     * notSetUp = `npm run discord:setup` hasn't been run (or the login expired);
+     * offline = Discord isn't running.
+     */
+    link: z.enum(['notSetUp', 'offline', 'connected']),
     micMuted: z.boolean(),
     deafened: z.boolean(),
+    /** The voice channel we're in, or null. */
+    channel: z
+      .object({
+        name: z.string(),
+        memberCount: z.number().int().nonnegative(),
+      })
+      .nullable(),
+    /** Up to MAX_VOICE_MEMBERS members: others first, us last. */
+    members: z.array(VoiceMemberSchema).max(MAX_VOICE_MEMBERS),
+    /** Someone is calling us on Discord right now (DM or group call), or null. */
+    incomingCall: z
+      .object({
+        name: z.string(),
+        /** data: URL, or null */
+        avatarUrl: z.string().nullable(),
+      })
+      .nullable(),
   }),
   obs: z.object({
     connected: z.boolean(),
@@ -83,7 +120,7 @@ export function createInitialState(agent: DeckState['agent']): DeckState {
     system: { uptimeSec: 0, cpuPercent: null, cpuTempC: null, gpuTempC: null },
     volume: null,
     media: null,
-    voice: { micMuted: false, deafened: false },
+    voice: { link: 'offline', micMuted: false, deafened: false, channel: null, members: [], incomingCall: null },
     obs: { connected: false, scene: null, scenes: [], recording: false, recordingSec: 0, streaming: false },
     light: { reachable: false, on: false, brightness: 0, rgb: '#FFFFFF' },
     modes: { dnd: false, active: null },

@@ -11,6 +11,7 @@
     "agent": "npm run start -w @deck/agent --",
     "agent:mock": "npm run start -w @deck/agent -- --mock",
     "client": "npm run client -w @deck/agent --",
+    "discord:setup": "npm run discord-setup -w @deck/agent --",
     "deck": "npm run start -w @deck/tablet --",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"
